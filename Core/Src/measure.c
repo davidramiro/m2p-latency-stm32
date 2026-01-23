@@ -22,13 +22,13 @@ uint32_t readADC() {
 
 uint32_t readAveragedADC() {
     uint32_t adc_val = 0;
-    for (int i = 0; i < NUM_CYCLES; i++) {
+    for (int i = 0; i < num_cycles; i++) {
         adc_val += readADC();
     }
-    return adc_val / NUM_CYCLES;
+    return adc_val / num_cycles;
 }
 
-void measure(void) {
+void measure(uint32_t latencies_us[]) {
     const uint32_t baseline = readADC();
 
     drawMeasurement(baseline, -1, -1);
@@ -38,11 +38,11 @@ void measure(void) {
     while (1) {
         const int32_t delta = readADC() - baseline;
 
-        if (abs(delta) > 50) {
+        if (abs(delta) > sensor_threshold) {
             uint32_t latency = (uint32_t)__HAL_TIM_GET_COUNTER(&htim2) - start;
             stopMouseAction();
 
-            if (cycle_index < NUM_CYCLES) {
+            if (cycle_index < num_cycles) {
                 latencies_us[cycle_index] = latency;
             }
 
@@ -55,28 +55,28 @@ void measure(void) {
     }
 }
 
-void computeStatsMs(float *mean_ms, float *sd_ms) {
+void computeStatsMs(uint32_t latencies_us[],float *mean_ms, float *sd_ms) {
     float sum_us = 0.0f;
     float variance_us = 0.0f;
 
-    if (NUM_CYCLES == 1) {
+    if (num_cycles == 1) {
         *mean_ms = latencies_us[0] / MS_FACTOR;
         *sd_ms = 0.0f;
         return;
     }
 
     // calculate mean
-    for (int i = 0; i < NUM_CYCLES; i++) {
+    for (int i = 0; i < num_cycles; i++) {
         sum_us += (float)latencies_us[i];
     }
-    const float mean_us = sum_us / (float) NUM_CYCLES;
+    const float mean_us = sum_us / (float) num_cycles;
 
     // calculate sample standard deviation
-    for (int i = 0; i < NUM_CYCLES; i++) {
+    for (int i = 0; i < num_cycles; i++) {
         const float diff_us = (float)latencies_us[i] - mean_us;
         variance_us += diff_us * diff_us;
     }
-    const float sd_us = sqrtf(variance_us / (NUM_CYCLES - 1));
+    const float sd_us = sqrtf(variance_us / (num_cycles - 1));
 
     *mean_ms = mean_us / MS_FACTOR;
     *sd_ms = sd_us / MS_FACTOR;

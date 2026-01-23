@@ -68,15 +68,19 @@ void stopMouseAction();
 #define BTN_DN_GPIO_Port GPIOA
 #define BTN_CNT_Pin GPIO_PIN_10
 #define BTN_CNT_GPIO_Port GPIOA
+#define BTN_LFT_Pin GPIO_PIN_3
+#define BTN_LFT_GPIO_Port GPIOB
+#define BTN_RGT_Pin GPIO_PIN_4
+#define BTN_RGT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define NUM_CYCLES 10
 #define HID_REPORT_SIZE 4
 
 extern TIM_HandleTypeDef htim2;
 extern ADC_HandleTypeDef hadc1;
-extern uint32_t latencies_us[NUM_CYCLES];
 extern uint16_t cycle_index;
+extern uint8_t num_cycles;
+extern uint16_t sensor_threshold;
 
 /* USER CODE END Private defines */
 

@@ -54,16 +54,18 @@ TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
 
-uint32_t latencies_us[NUM_CYCLES] = {};
+uint16_t sensor_threshold = 50;
+uint8_t num_cycles = 10;
 uint16_t cycle_index = 0;
 uint8_t hid_report[HID_REPORT_SIZE] = {0};
 
-enum MouseMode {
+enum MenuSelector {
   CLICK = 0,
-  MOVE = 1
+  MOVE = 1,
+  PARAMS = 2
 };
 
-enum MouseMode selectedMode = CLICK;
+enum MenuSelector selectedMode = CLICK;
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -82,6 +84,9 @@ void releaseMouse();
 uint32_t moveMouse();
 void moveBackMouse();
 uint8_t HID_IsIdle (const USBD_HandleTypeDef *pdev);
+uint32_t min_adc_val;
+uint32_t max_adc_val;
+uint32_t cur_adc_val;
 
 /* USER CODE END PFP */
 
@@ -150,6 +155,71 @@ uint8_t HID_IsIdle (const USBD_HandleTypeDef *pdev) {
   return ((USBD_HID_HandleTypeDef *)pdev->pClassData)->state == USBD_HID_IDLE;
 }
 
+void pollMenuButtons() {
+  if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
+    HAL_Delay(80);
+    if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET && selectedMode < 2) {
+      selectedMode++;
+      HAL_Delay(100);
+    }
+  }
+
+  if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
+    HAL_Delay(80);
+    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && selectedMode > 0) {
+      selectedMode--;
+      HAL_Delay(100);
+    }
+  }
+}
+
+void pollValueButtons() {
+  if (HAL_GPIO_ReadPin(BTN_LFT_GPIO_Port, BTN_LFT_Pin) == GPIO_PIN_RESET) {
+    HAL_Delay(80);
+    if (HAL_GPIO_ReadPin(BTN_LFT_GPIO_Port, BTN_LFT_Pin) == GPIO_PIN_RESET && selectedMode == 0) {
+      num_cycles--;
+    }
+    if (HAL_GPIO_ReadPin(BTN_LFT_GPIO_Port, BTN_LFT_Pin) == GPIO_PIN_RESET && selectedMode == 1) {
+      sensor_threshold--;
+    }
+    HAL_Delay(100);
+  }
+
+  if (HAL_GPIO_ReadPin(BTN_RGT_GPIO_Port, BTN_RGT_Pin) == GPIO_PIN_RESET) {
+    HAL_Delay(80);
+    if (HAL_GPIO_ReadPin(BTN_RGT_GPIO_Port, BTN_RGT_Pin) == GPIO_PIN_RESET && selectedMode == 0) {
+      num_cycles++;
+    }
+    if (HAL_GPIO_ReadPin(BTN_RGT_GPIO_Port, BTN_RGT_Pin) == GPIO_PIN_RESET && selectedMode == 1) {
+      sensor_threshold++;
+    }
+  }
+}
+
+
+void menuRoutine() {
+  while (1) {
+    cur_adc_val = readAveragedADC();
+
+    if (cur_adc_val < min_adc_val) {
+      min_adc_val = cur_adc_val;
+    } else if (cur_adc_val > max_adc_val) {
+      max_adc_val = cur_adc_val;
+    }
+
+    pollMenuButtons();
+    pollValueButtons();
+    drawParamsMenu(selectedMode, min_adc_val, max_adc_val, cur_adc_val);
+    if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+      if (selectedMode == PARAMS) {
+        break;
+      }
+    }
+  }
+
+  HAL_Delay(100);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -191,9 +261,6 @@ int main(void)
   drawSplashScreen();
   HAL_Delay(4000);
 
-  uint32_t min_adc_val = readAveragedADC();
-  uint32_t max_adc_val = min_adc_val;
-
   asm (".global _printf_float");
 
   /* USER CODE END 2 */
@@ -202,45 +269,39 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    pollMenuButtons();
+
     // wait for button press
-    while (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_SET) {
-      if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
-        selectedMode = MOVE;
+    if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+
+      if (selectedMode == CLICK || selectedMode == MOVE) {
+        uint32_t latencies_us[num_cycles] = {};
+
+        while (cycle_index < num_cycles) {
+          measure(latencies_us);
+          cycle_index++;
+        }
+
+        float mean_ms = 0.0f;
+        float sd_ms = 0.0f;
+
+        computeStatsMs(latencies_us, &mean_ms, &sd_ms);
+        printAverage(mean_ms, sd_ms);
+        HAL_Delay(10000);
+
+
+        cycle_index = 0;
       }
 
-      if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
-        selectedMode = CLICK;
+      if (selectedMode == PARAMS) {
+          selectedMode = 0;
+          menuRoutine();
       }
-
-      const uint32_t adc_val = readAveragedADC();
-
-      if (adc_val < min_adc_val) {
-        min_adc_val = adc_val;
-      } else if (adc_val > max_adc_val) {
-        max_adc_val = adc_val;
-      }
-
-      drawStartupScreen(min_adc_val, max_adc_val, adc_val, selectedMode);
-
-      HAL_Delay(10);
     }
 
+    drawStartupScreen(selectedMode);
 
-
-    while (cycle_index < NUM_CYCLES) {
-      measure();
-      cycle_index++;
-    }
-
-    float mean_ms = 0.0f;
-    float sd_ms = 0.0f;
-
-    computeStatsMs(&mean_ms, &sd_ms);
-    printAverage(mean_ms, sd_ms);
-    HAL_Delay(10000);
-
-
-    cycle_index = 0;
+    HAL_Delay(10);
 
     /* USER CODE END WHILE */
 
@@ -458,6 +519,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BTN_LFT_Pin BTN_RGT_Pin */
+  GPIO_InitStruct.Pin = BTN_LFT_Pin|BTN_RGT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

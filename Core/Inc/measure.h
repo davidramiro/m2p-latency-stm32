@@ -6,5 +6,5 @@
 
 uint32_t readADC();
 uint32_t readAveragedADC();
-void measure();
-void computeStatsMs(float *mean_ms, float *sd_ms);
+void measure(uint32_t latencies_us[]);
+void computeStatsMs(uint32_t latencies_us[], float *mean_ms, float *sd_ms);
