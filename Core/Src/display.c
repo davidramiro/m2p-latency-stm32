@@ -121,8 +121,8 @@ void drawParamsMenu(const uint8_t index) {
     ssd1306_SetCursor(43, 60);
     ssd1306_WriteString("Threshold", Font_6x8, White);
 
-    ssd1306_SetCursor(40, 84);
-    ssd1306_WriteString("   Exit   ", Font_6x8, White);
+    ssd1306_SetCursor(37, 84);
+    ssd1306_WriteString("Save & Exit", Font_6x8, White);
 
     drawSensorBarInline();
 

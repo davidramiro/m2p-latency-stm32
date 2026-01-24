@@ -254,6 +254,12 @@ void menuRoutine() {
     drawParamsMenu(paramMenuIndex);
     if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == EXIT) {
+        HAL_FLASH_Unlock();
+        FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,0x08060000,num_cycles);
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,0x08060010,sensor_threshold);
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,0x08060020,sensor_threshold + num_cycles);
+        HAL_FLASH_Lock();
         break;
       }
     }
@@ -281,6 +287,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  asm (".global _printf_float");
 
   /* USER CODE END Init */
 
@@ -301,9 +308,27 @@ int main(void)
 
   ssd1306_Init();
   drawSplashScreen();
-  HAL_Delay(4000);
+  HAL_Delay(2000);
 
-  asm (".global _printf_float");
+  uint8_t cycles = *(__IO uint32_t *)0x08060000;
+  uint16_t thresh = *(__IO uint32_t *)0x08060010;
+  uint32_t checksum = *(__IO uint32_t *)0x08060020;
+
+  if (cycles + thresh != checksum) {
+    HAL_FLASH_Unlock();
+    FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,0x08060000, num_cycles);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,0x08060010, sensor_threshold);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,0x08060020, sensor_threshold + num_cycles);
+    HAL_FLASH_Lock();
+  } else {
+    num_cycles = cycles;
+    sensor_threshold = thresh;
+  }
+
+  drawMeasurement(cycles, thresh, checksum);
+
+  HAL_Delay(1000);
 
   /* USER CODE END 2 */
 
