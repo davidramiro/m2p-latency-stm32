@@ -76,6 +76,7 @@ endif
 # C sources
 C_SOURCES =  \
 Core/Src/display.c \
+Core/Src/flash.c \
 Core/Src/main.c \
 Core/Src/measure.c \
 Core/Src/ssd1306.c \

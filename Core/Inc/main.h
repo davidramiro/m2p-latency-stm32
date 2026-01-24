@@ -76,7 +76,9 @@ void stopMouseAction();
 
 /* USER CODE BEGIN Private defines */
 #define HID_REPORT_SIZE 4
-#define BTN_DEBOUNCE_DELAY 40
+#define BTN_DEBOUNCE_DELAY 60
+#define DEFAULT_THRESHOLD 40
+#define DEFAULT_NUM_CYCLES 10
 
 extern TIM_HandleTypeDef htim2;
 extern ADC_HandleTypeDef hadc1;

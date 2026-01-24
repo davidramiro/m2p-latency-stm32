@@ -1,0 +1,18 @@
+#pragma once
+
+#define CYCLES_MEM_ADDR 0x08060000
+#define THRESHOLD_MEM_ADDR 0x08060010
+#define CHECKSUM_MEM_ADDR 0x08060020
+
+typedef enum {
+    FLASH_OK = 0,
+    FLASH_ERROR_UNLOCK,
+    FLASH_ERROR_ERASE,
+    FLASH_ERROR_PROGRAM_CYCLES,
+    FLASH_ERROR_PROGRAM_THRESHOLD,
+    FLASH_ERROR_PROGRAM_CHECKSUM,
+    FLASH_ERROR_VERIFY
+} FlashStatus;
+
+FlashStatus saveToFlash(void);
+void readFlash(void);

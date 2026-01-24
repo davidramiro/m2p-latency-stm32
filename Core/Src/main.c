@@ -25,6 +25,7 @@
 
 #include "ssd1306.h"
 #include "display.h"
+#include "flash.h"
 #include "measure.h"
 #include "usbd_hid.h"
 
@@ -54,8 +55,8 @@ TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
 
-uint16_t sensor_threshold = 50;
-uint8_t num_cycles = 10;
+uint16_t sensor_threshold = DEFAULT_THRESHOLD;
+uint8_t num_cycles = DEFAULT_NUM_CYCLES;
 uint16_t cycle_index = 0;
 uint8_t hid_report[HID_REPORT_SIZE] = {0};
 uint32_t max_adc_val;
@@ -254,18 +255,16 @@ void menuRoutine() {
     drawParamsMenu(paramMenuIndex);
     if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == EXIT) {
-        HAL_FLASH_Unlock();
-        FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,0x08060000,num_cycles);
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,0x08060010,sensor_threshold);
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,0x08060020,sensor_threshold + num_cycles);
-        HAL_FLASH_Lock();
+        if (saveToFlash() != FLASH_OK) {
+          drawError("Flash error!");
+          HAL_Delay(2000);
+        }
         break;
       }
     }
   }
 
-  HAL_Delay(100);
+  HAL_Delay(BTN_DEBOUNCE_DELAY);
 }
 
 /* USER CODE END 0 */
@@ -310,25 +309,7 @@ int main(void)
   drawSplashScreen();
   HAL_Delay(2000);
 
-  uint8_t cycles = *(__IO uint32_t *)0x08060000;
-  uint16_t thresh = *(__IO uint32_t *)0x08060010;
-  uint32_t checksum = *(__IO uint32_t *)0x08060020;
-
-  if (cycles + thresh != checksum) {
-    HAL_FLASH_Unlock();
-    FLASH_Erase_Sector(7, FLASH_VOLTAGE_RANGE_3);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,0x08060000, num_cycles);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,0x08060010, sensor_threshold);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,0x08060020, sensor_threshold + num_cycles);
-    HAL_FLASH_Lock();
-  } else {
-    num_cycles = cycles;
-    sensor_threshold = thresh;
-  }
-
-  drawMeasurement(cycles, thresh, checksum);
-
-  HAL_Delay(1000);
+  readFlash();
 
   /* USER CODE END 2 */
 
@@ -351,9 +332,8 @@ int main(void)
         float sd_ms = 0.0f;
 
         computeStatsMs(latencies_us, &mean_ms, &sd_ms);
-        printAverage(mean_ms, sd_ms);
+        drawAverage(mean_ms, sd_ms);
         HAL_Delay(10000);
-
 
         cycle_index = 0;
       }
