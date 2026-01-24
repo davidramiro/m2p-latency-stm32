@@ -57,6 +57,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
 uint32_t startMouseAction();
+
 void stopMouseAction();
 
 /* USER CODE END EFP */
@@ -75,12 +76,17 @@ void stopMouseAction();
 
 /* USER CODE BEGIN Private defines */
 #define HID_REPORT_SIZE 4
+#define BTN_DEBOUNCE_DELAY 40
 
 extern TIM_HandleTypeDef htim2;
 extern ADC_HandleTypeDef hadc1;
 extern uint16_t cycle_index;
 extern uint8_t num_cycles;
 extern uint16_t sensor_threshold;
+
+extern uint32_t min_adc_val;
+extern uint32_t max_adc_val;
+extern uint32_t cur_adc_val;
 
 /* USER CODE END Private defines */
 

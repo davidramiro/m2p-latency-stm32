@@ -49,13 +49,13 @@ void drawStartupScreen(const uint8_t mode) {
     ssd1306_UpdateScreen();
 }
 
-void drawSensorBarInline(const uint32_t min, const uint32_t max, const uint32_t cur) {
+void drawSensorBarInline() {
     char min_buf[5];
     char max_buf[5];
     char cur_buf[5];
-    snprintf(min_buf, sizeof(min_buf), "%lu", min);
-    snprintf(max_buf, sizeof(max_buf), "%lu", max);
-    snprintf(cur_buf, sizeof(cur_buf), "%lu", cur);
+    snprintf(min_buf, sizeof(min_buf), "%lu", min_adc_val);
+    snprintf(max_buf, sizeof(max_buf), "%lu", max_adc_val);
+    snprintf(cur_buf, sizeof(cur_buf), "%lu", cur_adc_val);
     ssd1306_SetCursor(0, SSD1306_HEIGHT - 18);
     ssd1306_WriteString(min_buf, Font_6x8, White);
 
@@ -65,9 +65,9 @@ void drawSensorBarInline(const uint32_t min, const uint32_t max, const uint32_t 
     ssd1306_SetCursor(SSD1306_WIDTH - 24, SSD1306_HEIGHT - 18);
     ssd1306_WriteString(max_buf, Font_6x8, White);
 
-    const double bar_units = SSD1306_WIDTH / (double)(max - min);
+    const double bar_units = SSD1306_WIDTH / (double)(max_adc_val - min_adc_val);
     ssd1306_DrawRectangle(0, SSD1306_HEIGHT - 10, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, White);
-    ssd1306_FillRectangle(0, SSD1306_HEIGHT - 10, cur * bar_units, SSD1306_HEIGHT - 1, White);
+    ssd1306_FillRectangle(0, SSD1306_HEIGHT - 10, cur_adc_val * bar_units, SSD1306_HEIGHT - 1, White);
 }
 
 void drawMainMenuInline(const uint8_t index) {
@@ -89,7 +89,7 @@ void drawMainMenuInline(const uint8_t index) {
     ssd1306_WriteString("Parameters", Font_6x8, White);
 }
 
-void drawParamsMenu(const uint8_t index, const uint32_t min, const uint32_t max, const uint32_t cur) {
+void drawParamsMenu(const uint8_t index) {
     ssd1306_Fill(Black);
 
     const uint8_t selectorY = 30 + index * 24;
@@ -124,7 +124,7 @@ void drawParamsMenu(const uint8_t index, const uint32_t min, const uint32_t max,
     ssd1306_SetCursor(40, 84);
     ssd1306_WriteString("   Exit   ", Font_6x8, White);
 
-    drawSensorBarInline(min, max, cur);
+    drawSensorBarInline();
 
     ssd1306_UpdateScreen();
 }

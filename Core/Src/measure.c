@@ -55,7 +55,7 @@ void measure(uint32_t latencies_us[]) {
     }
 }
 
-void computeStatsMs(uint32_t latencies_us[],float *mean_ms, float *sd_ms) {
+void computeStatsMs(uint32_t latencies_us[], float *mean_ms, float *sd_ms) {
     float sum_us = 0.0f;
     float variance_us = 0.0f;
 
