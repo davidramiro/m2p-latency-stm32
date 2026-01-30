@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "../Inc/usb.h"
 #include "../Inc/main.h"
 #include "../Inc/display.h"
 #include "../Inc/measure.h"

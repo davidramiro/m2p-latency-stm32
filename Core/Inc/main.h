@@ -56,10 +56,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-uint32_t startMouseAction();
-
-void stopMouseAction();
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -75,7 +71,6 @@ void stopMouseAction();
 #define BTN_RGT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define HID_REPORT_SIZE 4
 #define BTN_DEBOUNCE_DELAY 60
 #define DEFAULT_THRESHOLD 40
 #define DEFAULT_NUM_CYCLES 10
@@ -85,10 +80,24 @@ extern ADC_HandleTypeDef hadc1;
 extern uint16_t cycle_index;
 extern uint8_t num_cycles;
 extern uint16_t sensor_threshold;
-
 extern uint32_t min_adc_val;
 extern uint32_t max_adc_val;
 extern uint32_t cur_adc_val;
+
+enum ParamMenuSelector {
+  CYCLES = 0,
+  THRESHOLD = 1,
+  EXIT = 2
+};
+
+enum MainMenuSelector {
+  CLICK = 0,
+  MOVE = 1,
+  PARAMS = 2
+};
+
+extern enum MainMenuSelector mainMenuIndex;
+extern enum ParamMenuSelector paramMenuIndex;
 
 /* USER CODE END Private defines */
 

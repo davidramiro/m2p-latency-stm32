@@ -58,28 +58,12 @@ TIM_HandleTypeDef htim2;
 uint16_t sensor_threshold = DEFAULT_THRESHOLD;
 uint8_t num_cycles = DEFAULT_NUM_CYCLES;
 uint16_t cycle_index = 0;
-uint8_t hid_report[HID_REPORT_SIZE] = {0};
 uint32_t max_adc_val;
 uint32_t min_adc_val;
 uint32_t cur_adc_val;
 
-enum MainMenuSelector {
-  CLICK = 0,
-  MOVE = 1,
-  PARAMS = 2
-};
-
 enum MainMenuSelector mainMenuIndex = CLICK;
-
-enum ParamMenuSelector {
-  CYCLES = 0,
-  THRESHOLD = 1,
-  EXIT = 2
-};
-
 enum ParamMenuSelector paramMenuIndex = CYCLES;
-
-extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE END PV */
 
@@ -91,15 +75,7 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
-uint32_t clickMouse(void);
 
-void releaseMouse(void);
-
-uint32_t moveMouse(void);
-
-void moveBackMouse(void);
-
-uint8_t HID_IsIdle(const USBD_HandleTypeDef *pdev);
 
 void pollMainMenuButtons();
 
@@ -110,86 +86,19 @@ void pollParamMenuButtons();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint32_t startMouseAction() {
-  if (mainMenuIndex == CLICK) {
-    return clickMouse();
-  }
-
-  return moveMouse();
-}
-
-void stopMouseAction() {
-  if (mainMenuIndex == CLICK) {
-    releaseMouse();
-  } else {
-    moveBackMouse();
-  }
-}
-
-uint32_t moveMouse() {
-  HAL_TIM_Base_Stop_IT(&htim2);
-  __HAL_TIM_SET_COUNTER(&htim2, 0);
-  HAL_TIM_Base_Start_IT(&htim2);
-
-  hid_report[0] = 0;
-  hid_report[1] = 127;
-  hid_report[2] = 127;
-  while (!HID_IsIdle(&hUsbDeviceFS)) {
-  }
-  const uint32_t timestamp = __HAL_TIM_GET_COUNTER(&htim2);
-  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
-
-  return timestamp;
-}
-
-void moveBackMouse() {
-  hid_report[0] = 0;
-  hid_report[1] = -127;
-  hid_report[2] = -127;
-  while (!HID_IsIdle(&hUsbDeviceFS)) {
-    // TODO: timeout
-  }
-  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
-}
-
-uint32_t clickMouse() {
-  HAL_TIM_Base_Stop_IT(&htim2);
-  __HAL_TIM_SET_COUNTER(&htim2, 0);
-  HAL_TIM_Base_Start_IT(&htim2);
-
-  hid_report[0] = 1;
-  while (!HID_IsIdle(&hUsbDeviceFS)) {
-  }
-  const uint32_t timestamp = __HAL_TIM_GET_COUNTER(&htim2);
-  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
-
-  return timestamp;
-}
-
-void releaseMouse() {
-  hid_report[0] = 0;
-  while (!HID_IsIdle(&hUsbDeviceFS)) {
-  }
-  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
-}
-
-uint8_t HID_IsIdle(const USBD_HandleTypeDef *pdev) {
-  return ((USBD_HID_HandleTypeDef *) pdev->pClassData)->state == USBD_HID_IDLE;
-}
-
 void pollMainMenuButtons() {
   if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET && mainMenuIndex < PARAMS) {
-      mainMenuIndex++;
+    if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET && mainMenuIndex > CLICK) {
+      mainMenuIndex--;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
   }
 
   if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && mainMenuIndex > CLICK) {
-      mainMenuIndex--;
+    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && mainMenuIndex < PARAMS) {
+      mainMenuIndex++;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
   }
@@ -198,16 +107,17 @@ void pollMainMenuButtons() {
 void pollParamMenuButtons() {
   if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET && paramMenuIndex < EXIT) {
-      paramMenuIndex++;
+    if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET && paramMenuIndex > CYCLES) {
+      paramMenuIndex--;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
   }
 
+
   if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && paramMenuIndex > CYCLES) {
-      paramMenuIndex--;
+    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && paramMenuIndex < EXIT) {
+      paramMenuIndex++;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
   }
@@ -239,19 +149,23 @@ void pollValueButtons() {
   }
 }
 
+void populateADCVals() {
+  cur_adc_val = readAveragedADC();
+
+  if (cur_adc_val < min_adc_val) {
+    min_adc_val = cur_adc_val;
+  } else if (cur_adc_val > max_adc_val) {
+    max_adc_val = cur_adc_val;
+  }
+}
 
 void menuRoutine() {
+  populateADCVals();
   while (1) {
-    cur_adc_val = readAveragedADC();
-
-    if (cur_adc_val < min_adc_val) {
-      min_adc_val = cur_adc_val;
-    } else if (cur_adc_val > max_adc_val) {
-      max_adc_val = cur_adc_val;
-    }
-
     pollParamMenuButtons();
     pollValueButtons();
+
+    populateADCVals();
     drawParamsMenu(paramMenuIndex);
     if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == EXIT) {
@@ -332,10 +246,15 @@ int main(void)
         float sd_ms = 0.0f;
 
         computeStatsMs(latencies_us, &mean_ms, &sd_ms);
-        drawAverage(mean_ms, sd_ms);
-        HAL_Delay(10000);
-
+        drawAverage(latencies_us, mean_ms, sd_ms);
         cycle_index = 0;
+
+        while (1) {
+          if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+            break;
+          }
+          HAL_Delay(BTN_DEBOUNCE_DELAY);
+        }
       }
 
       if (mainMenuIndex == PARAMS) {

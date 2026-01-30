@@ -39,10 +39,10 @@ void drawStartupScreen(const uint8_t mode) {
     ssd1306_DrawBitmap(3, 8, m2p_logo_bitmap_32, 32, 32, 1);
 
     ssd1306_SetCursor(45, 13);
-    ssd1306_WriteString("davidramiro", Font_6x8, White);
+    ssd1306_WriteString("DAVIDRAMIRO", Font_6x8, White);
 
     ssd1306_SetCursor(45, 24);
-    ssd1306_WriteString("m2p-latency", Font_6x8, White);
+    ssd1306_WriteString("M2P-LATENCY", Font_6x8, White);
 
     drawMainMenuInline(mode);
 
@@ -80,13 +80,13 @@ void drawMainMenuInline(const uint8_t index) {
     ssd1306_DrawBitmap(8, 105, cogwheel_bitmap, 16, 16, 1);
 
     ssd1306_SetCursor(40, 61);
-    ssd1306_WriteString("Click Mode", Font_6x8, White);
+    ssd1306_WriteString("CLICK MODE", Font_6x8, White);
 
     ssd1306_SetCursor(43, 85);
-    ssd1306_WriteString("Move Mode", Font_6x8, White);
+    ssd1306_WriteString("MOVE MODE", Font_6x8, White);
 
     ssd1306_SetCursor(40, 109);
-    ssd1306_WriteString("Parameters", Font_6x8, White);
+    ssd1306_WriteString("PARAMETERS", Font_6x8, White);
 }
 
 void drawParamsMenu(const uint8_t index) {
@@ -116,13 +116,13 @@ void drawParamsMenu(const uint8_t index) {
     ssd1306_DrawBitmap(8, 80, exit_bitmap, 15, 14, 1);
 
     ssd1306_SetCursor(40, 36);
-    ssd1306_WriteString("  Cycles  ", Font_6x8, White);
+    ssd1306_WriteString("  CYCLES  ", Font_6x8, White);
 
     ssd1306_SetCursor(43, 60);
-    ssd1306_WriteString("Threshold", Font_6x8, White);
+    ssd1306_WriteString("THRESHOLD", Font_6x8, White);
 
     ssd1306_SetCursor(37, 84);
-    ssd1306_WriteString("Save & Exit", Font_6x8, White);
+    ssd1306_WriteString("SAVE & EXIT", Font_6x8, White);
 
     drawSensorBarInline();
 
@@ -136,7 +136,7 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
     ssd1306_Line(0, 36, 127, 36, 1);
 
     ssd1306_SetCursor(1, 1);
-    ssd1306_WriteString("cycle", Font_6x8, White);
+    ssd1306_WriteString("CYCLE", Font_6x8, White);
 
     ssd1306_SetCursor(35, 12);
     char cycle_buf[12];
@@ -147,7 +147,7 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
 
     ssd1306_SetCursor(1, 37);
 
-    ssd1306_WriteString("brightness", Font_6x8, White);
+    ssd1306_WriteString("BRIGHTNESS", Font_6x8, White);
 
     ssd1306_SetCursor(3, 48);
     char baseline_buf[5];
@@ -164,7 +164,7 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
     }
 
     ssd1306_SetCursor(1, 74);
-    ssd1306_WriteString("latency", Font_6x8, White);
+    ssd1306_WriteString("LATENCY", Font_6x8, White);
 
     if (latency != -1) {
         ssd1306_SetCursor(93, 89);
@@ -181,32 +181,76 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
 
 }
 
-void drawAverage(const float mean_ms, const float sd_ms) {
+uint32_t getMin(uint32_t latencies_us[]) {
+    uint32_t min = latencies_us[0] / 1000;
+    for (uint8_t i = 1; i < num_cycles; i++) {
+        if (latencies_us[i] / 1000 < min) {
+            min = latencies_us[i] / 1000;
+        }
+    }
+    return min;
+}
+
+uint32_t getMax(uint32_t latencies_us[]) {
+    uint32_t max = latencies_us[0] / 1000;
+    for (uint8_t i = 1; i < num_cycles; i++) {
+        if (latencies_us[i] / 1000 > max) {
+            max = latencies_us[i] / 1000;
+        }
+    }
+    return max;
+}
+
+void drawGraphInline(uint32_t latencies_us[]) {
+    ssd1306_Line(4, 60, 4, 96, 1);
+    ssd1306_Line(2, 94, 122, 94, 1);
+    ssd1306_Line(4, 60, 5, 61, 1);
+    ssd1306_Line(122, 94, 121, 95, 1);
+    ssd1306_Line(4, 60, 3, 61, 1);
+    ssd1306_Line(122, 94, 121, 93, 1);
+
+    const uint32_t min = getMin(latencies_us);
+    const uint32_t max = getMax(latencies_us);
+
+    const uint32_t range = max - min;
+    const float PIXEL_PER_VALUE = 30 / (float)range;
+    const float PIXEL_PER_CYCLE = 120 / (float)num_cycles;
+    for (int i = 0; i < num_cycles; i++) {
+        ssd1306_DrawPixel((i+1)*PIXEL_PER_CYCLE, 93 - (int)(latencies_us[i] / 1000 - min) * PIXEL_PER_VALUE, White);
+    }
+}
+
+void drawAverage(uint32_t latencies_us[], const float mean_ms, const float sd_ms) {
     ssd1306_Fill(Black);
 
-    ssd1306_Line(0, 63, 128, 63, 1);
-
     ssd1306_SetCursor(2, 2);
-    ssd1306_WriteString("average", Font_6x8, White);
+    ssd1306_WriteString("MEAN", Font_6x8, White);
 
-    ssd1306_SetCursor(1, 67);
-    ssd1306_WriteString("std dev", Font_6x8, White);
+    ssd1306_SetCursor(2, 30);
+    ssd1306_WriteString("STANDARD DEVIATION", Font_6x8, White);
 
-    ssd1306_SetCursor(107, 47);
+    ssd1306_SetCursor(107, 16);
     ssd1306_WriteString("ms", Font_6x8, White);
 
-    ssd1306_SetCursor(107, 115);
+    ssd1306_SetCursor(107, 46);
     ssd1306_WriteString("ms", Font_6x8, White);
 
-    ssd1306_SetCursor(5, 29);
+    ssd1306_SetCursor(2, 10);
     char mean_buf[14];
     snprintf(mean_buf, sizeof(mean_buf), "%.3f", mean_ms);
     ssd1306_WriteString(mean_buf, Font_11x18, White);
 
-    ssd1306_SetCursor(5, 93);
+    ssd1306_SetCursor(2, 38);
     char sd_buf[14];
     snprintf(sd_buf, sizeof(sd_buf), "%.3f", sd_ms);
     ssd1306_WriteString(sd_buf, Font_11x18, White);
+
+    ssd1306_DrawBitmap(1, 105, menu_selection_bitmap, 128, 21, 1);
+    ssd1306_DrawBitmap(8, 108, exit_bitmap, 15, 14, 1);
+    ssd1306_SetCursor(41, 112);
+    ssd1306_WriteString("MAIN MENU", Font_6x8, White);
+    
+    drawGraphInline(latencies_us);
 
     ssd1306_UpdateScreen();
 }
