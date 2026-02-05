@@ -27,8 +27,8 @@ void drawSplashScreen() {
     ssd1306_SetCursor(28, SSD1306_HEIGHT - 29);
     ssd1306_WriteString("davidramiro", Font_6x8, White);
 
-    ssd1306_SetCursor(0, SSD1306_HEIGHT - 19);
-    ssd1306_WriteString("m2p-latency", Font_11x18, White);
+    ssd1306_SetCursor(11, SSD1306_HEIGHT - 19);
+    ssd1306_WriteString("deltaprobe", Font_11x18, White);
 
     ssd1306_UpdateScreen();
 }
@@ -41,8 +41,8 @@ void drawStartupScreen(const uint8_t mode) {
     ssd1306_SetCursor(45, 13);
     ssd1306_WriteString("DAVIDRAMIRO", Font_6x8, White);
 
-    ssd1306_SetCursor(45, 24);
-    ssd1306_WriteString("M2P-LATENCY", Font_6x8, White);
+    ssd1306_SetCursor(48, 24);
+    ssd1306_WriteString("DELTAPROBE", Font_6x8, White);
 
     drawMainMenuInline(mode);
 
@@ -106,9 +106,11 @@ void drawParamsMenu(const uint8_t index) {
         ssd1306_WriteString(value_buf, Font_11x18, White);
     }
 
+    if (index != 2) {
+        ssd1306_DrawBitmap(25, 6, left_bitmap, 8, 15, 1);
+        ssd1306_DrawBitmap(91, 5, right_bitmap, 8, 15, 1);
+    }
 
-    ssd1306_DrawBitmap(25, 6, left_bitmap, 8, 15, 1);
-    ssd1306_DrawBitmap(91, 5, right_bitmap, 8, 15, 1);
 
 
     ssd1306_DrawBitmap(8, 32, cycles_bitmap, 16, 16, 1);
@@ -145,7 +147,7 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
 
     ssd1306_Line(0, 72, 127, 72, 1);
 
-    ssd1306_SetCursor(1, 37);
+    ssd1306_SetCursor(1, 38);
 
     ssd1306_WriteString("BRIGHTNESS", Font_6x8, White);
 

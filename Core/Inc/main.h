@@ -59,16 +59,20 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BTN_UP_Pin GPIO_PIN_8
-#define BTN_UP_GPIO_Port GPIOA
-#define BTN_DN_Pin GPIO_PIN_9
-#define BTN_DN_GPIO_Port GPIOA
-#define BTN_CNT_Pin GPIO_PIN_10
-#define BTN_CNT_GPIO_Port GPIOA
-#define BTN_LFT_Pin GPIO_PIN_3
-#define BTN_LFT_GPIO_Port GPIOB
-#define BTN_RGT_Pin GPIO_PIN_4
-#define BTN_RGT_GPIO_Port GPIOB
+#define BTN_LEFT_Pin GPIO_PIN_6
+#define BTN_LEFT_GPIO_Port GPIOA
+#define BTN_CENTER_Pin GPIO_PIN_7
+#define BTN_CENTER_GPIO_Port GPIOA
+#define BTN_DOWN_Pin GPIO_PIN_4
+#define BTN_DOWN_GPIO_Port GPIOC
+#define BTN_RIGHT_Pin GPIO_PIN_5
+#define BTN_RIGHT_GPIO_Port GPIOC
+#define BTN_UP_Pin GPIO_PIN_0
+#define BTN_UP_GPIO_Port GPIOB
+#define ERR_LED_Pin GPIO_PIN_11
+#define ERR_LED_GPIO_Port GPIOC
+#define INF_LED_Pin GPIO_PIN_12
+#define INF_LED_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 #define BTN_DEBOUNCE_DELAY 60

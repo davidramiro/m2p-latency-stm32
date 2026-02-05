@@ -21,10 +21,9 @@ uint32_t startMouseAction() {
 
     while (!HID_IsIdle(&hUsbDeviceFS)) {
     }
-    const uint32_t timestamp = __HAL_TIM_GET_COUNTER(&htim2);
     USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
 
-    return timestamp;
+    return TIM2->CNT;
 }
 
 void stopMouseAction() {

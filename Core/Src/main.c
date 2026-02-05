@@ -75,8 +75,6 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
-
-
 void pollMainMenuButtons();
 
 void pollParamMenuButtons();
@@ -95,9 +93,9 @@ void pollMainMenuButtons() {
     }
   }
 
-  if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
+  if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && mainMenuIndex < PARAMS) {
+    if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET && mainMenuIndex < PARAMS) {
       mainMenuIndex++;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
@@ -114,9 +112,9 @@ void pollParamMenuButtons() {
   }
 
 
-  if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
+  if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET && paramMenuIndex < EXIT) {
+    if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET && paramMenuIndex < EXIT) {
       paramMenuIndex++;
       HAL_Delay(BTN_DEBOUNCE_DELAY);
     }
@@ -124,9 +122,9 @@ void pollParamMenuButtons() {
 }
 
 void pollValueButtons() {
-  if (HAL_GPIO_ReadPin(BTN_LFT_GPIO_Port, BTN_LFT_Pin) == GPIO_PIN_RESET) {
+  if (HAL_GPIO_ReadPin(BTN_LEFT_GPIO_Port, BTN_LEFT_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_LFT_GPIO_Port, BTN_LFT_Pin) == GPIO_PIN_RESET) {
+    if (HAL_GPIO_ReadPin(BTN_LEFT_GPIO_Port, BTN_LEFT_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == CYCLES) {
         num_cycles--;
       } else if (paramMenuIndex == THRESHOLD) {
@@ -136,9 +134,9 @@ void pollValueButtons() {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
   }
 
-  if (HAL_GPIO_ReadPin(BTN_RGT_GPIO_Port, BTN_RGT_Pin) == GPIO_PIN_RESET) {
+  if (HAL_GPIO_ReadPin(BTN_RIGHT_GPIO_Port, BTN_RIGHT_Pin) == GPIO_PIN_RESET) {
     HAL_Delay(BTN_DEBOUNCE_DELAY);
-    if (HAL_GPIO_ReadPin(BTN_RGT_GPIO_Port, BTN_RGT_Pin) == GPIO_PIN_RESET) {
+    if (HAL_GPIO_ReadPin(BTN_RIGHT_GPIO_Port, BTN_RIGHT_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == CYCLES) {
         num_cycles++;
       } else if (paramMenuIndex == THRESHOLD) {
@@ -167,7 +165,7 @@ void menuRoutine() {
 
     populateADCVals();
     drawParamsMenu(paramMenuIndex);
-    if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+    if (HAL_GPIO_ReadPin(BTN_CENTER_GPIO_Port, BTN_CENTER_Pin) == GPIO_PIN_RESET) {
       if (paramMenuIndex == EXIT) {
         if (saveToFlash() != FLASH_OK) {
           drawError("Flash error!");
@@ -225,15 +223,17 @@ int main(void)
 
   readFlash();
 
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_SET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1) {
+   while (1) {
     pollMainMenuButtons();
 
     // wait for button press
-    if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+    if (HAL_GPIO_ReadPin(BTN_CENTER_GPIO_Port, BTN_CENTER_Pin) == GPIO_PIN_RESET) {
       if (mainMenuIndex == CLICK || mainMenuIndex == MOVE) {
         uint32_t latencies_us[num_cycles] = {};
 
@@ -250,7 +250,7 @@ int main(void)
         cycle_index = 0;
 
         while (1) {
-          if (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_RESET) {
+          if (HAL_GPIO_ReadPin(BTN_CENTER_GPIO_Port, BTN_CENTER_Pin) == GPIO_PIN_RESET) {
             break;
           }
           HAL_Delay(BTN_DEBOUNCE_DELAY);
@@ -358,7 +358,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -463,32 +463,38 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, ERR_LED_Pin|INF_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : BTN_UP_Pin BTN_DN_Pin BTN_CNT_Pin */
-  GPIO_InitStruct.Pin = BTN_UP_Pin|BTN_DN_Pin|BTN_CNT_Pin;
+  /*Configure GPIO pins : BTN_LEFT_Pin BTN_CENTER_Pin */
+  GPIO_InitStruct.Pin = BTN_LEFT_Pin|BTN_CENTER_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BTN_LFT_Pin BTN_RGT_Pin */
-  GPIO_InitStruct.Pin = BTN_LFT_Pin|BTN_RGT_Pin;
+  /*Configure GPIO pins : BTN_DOWN_Pin BTN_RIGHT_Pin */
+  GPIO_InitStruct.Pin = BTN_DOWN_Pin|BTN_RIGHT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BTN_UP_Pin */
+  GPIO_InitStruct.Pin = BTN_UP_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BTN_UP_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ERR_LED_Pin INF_LED_Pin */
+  GPIO_InitStruct.Pin = ERR_LED_Pin|INF_LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -508,7 +514,8 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1) {
+  while (1)
+  {
   }
   /* USER CODE END Error_Handler_Debug */
 }
