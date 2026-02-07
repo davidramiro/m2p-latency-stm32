@@ -18,6 +18,7 @@ static const unsigned char left_bitmap[] = {0x01,0x03,0x07,0x0f,0x1f,0x3f,0x7f,0
 static const unsigned char cycles_bitmap[] = {0x07,0xe0,0x1f,0xf9,0x3f,0xff,0x7e,0x7f,0x78,0x1f,0xf0,0x7f,0xf0,0x1f,0xe0,0x03,0xe0,0x00,0xf0,0x00,0xf0,0x00,0x78,0x1c,0x7e,0x7e,0x3f,0xfc,0x1f,0xf8,0x07,0xe0};
 static const unsigned char threshold_bitmap[] = {0x00,0x00,0x00,0x06,0x00,0x60,0x0e,0x00,0x70,0x1e,0x00,0x78,0x3c,0x00,0x3c,0x78,0x00,0x1e,0xff,0xff,0xff,0xff,0xff,0xff,0x78,0x00,0x1e,0x3c,0x00,0x3c,0x1e,0x00,0x78,0x0e,0x00,0x70,0x06,0x00,0x60};
 static const unsigned char exit_bitmap[] = {0x02,0x00,0x06,0x00,0x0e,0x00,0x1e,0x00,0x3f,0xc0,0x7f,0xf0,0xff,0xf8,0x7f,0xf8,0x3f,0xfc,0x1e,0x3c,0x0e,0x0e,0x06,0x06,0x02,0x02,0x00,0x00};
+static const unsigned char graph_point_bitmap[] = {0xe0,0xe0,0xe0};
 
 void drawSplashScreen() {
     ssd1306_Fill(Black);
@@ -65,7 +66,14 @@ void drawSensorBarInline() {
     ssd1306_SetCursor(SSD1306_WIDTH - 24, SSD1306_HEIGHT - 18);
     ssd1306_WriteString(max_buf, Font_6x8, White);
 
-    const double bar_units = SSD1306_WIDTH / (double)(max_adc_val - min_adc_val);
+    double bar_units;
+
+    if (max_adc_val == min_adc_val) {
+        bar_units = SSD1306_WIDTH / 2;
+    } else {
+        bar_units = SSD1306_WIDTH / (double)(max_adc_val - min_adc_val);
+    }
+
     ssd1306_DrawRectangle(0, SSD1306_HEIGHT - 10, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, White);
     ssd1306_FillRectangle(0, SSD1306_HEIGHT - 10, cur_adc_val * bar_units, SSD1306_HEIGHT - 1, White);
 }
@@ -110,8 +118,6 @@ void drawParamsMenu(const uint8_t index) {
         ssd1306_DrawBitmap(25, 6, left_bitmap, 8, 15, 1);
         ssd1306_DrawBitmap(91, 5, right_bitmap, 8, 15, 1);
     }
-
-
 
     ssd1306_DrawBitmap(8, 32, cycles_bitmap, 16, 16, 1);
     ssd1306_DrawBitmap(8, 56, threshold_bitmap, 24, 13, 1);
@@ -217,8 +223,19 @@ void drawGraphInline(uint32_t latencies_us[]) {
     const uint32_t range = max - min;
     const float PIXEL_PER_VALUE = 30 / (float)range;
     const float PIXEL_PER_CYCLE = 120 / (float)num_cycles;
+
+    uint8_t prevX, prevY;
     for (int i = 0; i < num_cycles; i++) {
-        ssd1306_DrawPixel((i+1)*PIXEL_PER_CYCLE, 93 - (int)(latencies_us[i] / 1000 - min) * PIXEL_PER_VALUE, White);
+        uint8_t x = (i+1)*PIXEL_PER_CYCLE;
+        uint8_t y = 93 - (int)(latencies_us[i] / 1000 - min) * PIXEL_PER_VALUE;
+        ssd1306_DrawBitmap(x, y, graph_point_bitmap, 3, 3, 1);
+
+        if (prevX != 0) {
+            ssd1306_Line(prevX, prevY, x, y, White);
+        }
+
+        prevX = x;
+        prevY = y;
     }
 }
 
