@@ -10,7 +10,7 @@ void readFlash(void) {
     uint16_t threshold_read = *(__IO uint32_t *)THRESHOLD_MEM_ADDR;
     uint32_t checksum_read = *(__IO uint32_t *)CHECKSUM_MEM_ADDR;
 
-    if (packedChecksum(threshold_read, cycles_read) != checksum_read) {
+    if (packedChecksum(cycles_read, threshold_read) != checksum_read) {
         // Checksum mismatch - write defaults to flash
         // Ignore return value on initialization - defaults are already set
         saveToFlash();
@@ -26,7 +26,7 @@ FlashStatus saveToFlash(void) {
     uint32_t checksum = *(__IO uint32_t *)CHECKSUM_MEM_ADDR;
 
     // No need to write if data unchanged
-    if (cycles == num_cycles && threshold == sensor_threshold && checksum == packedChecksum(threshold, cycles))
+    if (cycles == num_cycles && threshold == sensor_threshold && checksum == packedChecksum(cycles, threshold))
     {
         return FLASH_OK;
     }
@@ -63,7 +63,7 @@ FlashStatus saveToFlash(void) {
         return FLASH_ERROR_PROGRAM_THRESHOLD;
     }
 
-    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CHECKSUM_MEM_ADDR, packedChecksum(sensor_threshold, num_cycles));
+    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CHECKSUM_MEM_ADDR, packedChecksum(num_cycles, sensor_threshold));
     if (status != HAL_OK) {
         HAL_FLASH_Lock();
         return FLASH_ERROR_PROGRAM_CHECKSUM;
@@ -76,7 +76,7 @@ FlashStatus saveToFlash(void) {
     uint32_t checksum_read = *(__IO uint32_t *)CHECKSUM_MEM_ADDR;
 
     if (cycles_read != num_cycles || threshold_read != sensor_threshold ||
-        checksum_read != packedChecksum(sensor_threshold, num_cycles)) {
+        checksum_read != packedChecksum(num_cycles, sensor_threshold)) {
         return FLASH_ERROR_VERIFY;
     }
 
