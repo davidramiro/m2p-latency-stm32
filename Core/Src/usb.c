@@ -40,12 +40,12 @@ int8_t start_mouse_action() {
 }
 
 /**
- * @brief Generates a random mouse movement report and sends it via USB HID.
+ * @brief Generates a random mouse move wheel scroll report and sends it via USB HID.
  *
- * @details The mouse report contains random X and Y coordinates ranging from -3
- * to 3 pixels. The function waits for the USB HID interface to become ready. If
- * a timeout occurs (6 seconds), it triggers an error state by turning on the
- * error LED, displaying a message, and delaying before returning. Upon
+ * @details The mouse report contains a random x/y move of -3 to 3 pixels 
+ * and vertical wheel delta of -1 to 3. The function waits for the USB HID 
+ * interface to become ready. If a timeout occurs (6 seconds), it triggers an error 
+ * state by turning on the error LED, displaying a message, and delaying before returning. Upon
  * successful transmission, it flashes the info LED to indicate completion.
  */
 void random_mouse_move() {
@@ -64,7 +64,7 @@ void random_mouse_move() {
   }
 
   tud_hid_mouse_report(REPORT_ID_MOUSE, 0, rand() % 7 - 3, rand() % 7 - 3,
-                       0, 0);
+    rand() % 7 - 3, 0);
 
   HAL_GPIO_WritePin(INF_LED_GPIO_Port, INF_LED_Pin, GPIO_PIN_SET);
   HAL_Delay(50);
