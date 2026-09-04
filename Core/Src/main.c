@@ -240,6 +240,11 @@ static void latency_routine(void) {
   uint32_t latencies_us[num_cycles];
   memset(latencies_us, 0, sizeof(latencies_us));
 
+  // hid warmup
+  if (!tud_hid_ready()) {
+    tud_task();
+  }
+
   while (cycle_index < num_cycles) {
     int8_t error = measure(latencies_us);
 
