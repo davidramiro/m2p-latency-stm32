@@ -39,16 +39,11 @@ void handle_MCU_sleep() {
 /**
  * @brief Manages display sleep state and pulses INF led when sleeping.
  * @details Checks the display_sleeping flag to determine the current state.
- * If the display is sleeping, the indicator LED blinks based on the
- * led_interrupt_counter. If a sleep request is detected, the U8G2 display is
- * powered down. If a wake-up request is detected, the display is powered back
- * up and the LED is set high. Request flags are cleared after processing.
+ * If a sleep request is detected, the U8G2 display is powered down. If a
+ * wake-up request is detected, the display is powered back up and request
+ * flags are cleared after processing.
  */
 void handle_display_sleep() {
-  if (display_sleeping) {
-    HAL_GPIO_WritePin(INF_LED_GPIO_Port, INF_LED_Pin,
-                      led_interrupt_counter % 5 == 0);
-  }
   if (sleep_requested) {
     if (!display_sleeping) {
       u8g2_SetPowerSave(&u8g2, 1);
@@ -60,7 +55,6 @@ void handle_display_sleep() {
     if (display_sleeping) {
       u8g2_SetPowerSave(&u8g2, 0);
       display_sleeping = 0;
-      HAL_GPIO_WritePin(INF_LED_GPIO_Port, INF_LED_Pin, GPIO_PIN_SET);
     }
   }
   wakeup_requested = 0;
