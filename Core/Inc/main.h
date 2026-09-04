@@ -101,7 +101,8 @@ void update_ADC_channel();
 #define DEFAULT_NUM_CYCLES 10
 #define DEFAULT_ADC_CHANNEL 1
 #define DISPLAY_SLEEP_TIMEOUT_S 60
-#define JIGGLE_INTERVAL_S 30
+#define JIGGLE_INTERVAL_MIN_S 1
+#define JIGGLE_INTERVAL_MAX_S 15
 #define ADDITIONAL_DEBOUNCE_MS 50
 
 extern TIM_HandleTypeDef htim2;

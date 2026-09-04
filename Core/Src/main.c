@@ -40,6 +40,8 @@
 #include "usb.h"
 #include "usbd.h"
 
+#include <stdlib.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -311,22 +313,34 @@ static void params_menu_routine(void) {
 }
 
 /**
+ * @brief Returns a random jiggle interval in seconds, ranging from
+ * JIGGLE_INTERVAL_MIN_S to JIGGLE_INTERVAL_MAX_S.
+ */
+static uint8_t random_jiggle_interval(void) {
+  return JIGGLE_INTERVAL_MIN_S +
+         rand() % (JIGGLE_INTERVAL_MAX_S - JIGGLE_INTERVAL_MIN_S + 1);
+}
+
+/**
  * @brief This function runs the jiggle routine.
  * It initializes a counter, waits for debounce, then enters a loop.
- * It draws a countdown screen, moves the mouse randomly after JIGGLE_INTERVAL_S
- * seconds, and exits if the center button is pressed.
+ * It draws a countdown screen, moves the mouse  randomly after a random
+ * interval of JIGGLE_INTERVAL_MIN_S to JIGGLE_INTERVAL_MAX_S seconds, and exits
+ * if the center button is pressed.
  */
 static void jiggle_routine(void) {
   jiggle_interrupt_counter = 0;
+  uint8_t jiggle_interval_s = random_jiggle_interval();
   HAL_Delay(50);
 
   while (1) {
     tud_task();
     handle_display_sleep();
 
-    render_jiggler_screen(JIGGLE_INTERVAL_S - jiggle_interrupt_counter);
-    if (jiggle_interrupt_counter == JIGGLE_INTERVAL_S) {
+    render_jiggler_screen(jiggle_interval_s - jiggle_interrupt_counter);
+    if (jiggle_interrupt_counter == jiggle_interval_s) {
       jiggle_interrupt_counter = 0;
+      jiggle_interval_s = random_jiggle_interval();
 
       random_mouse_move();
     }
@@ -427,6 +441,8 @@ int main(void) {
   /* USER CODE BEGIN 2 */
 
   hardware_init();
+
+  srand(read_single_ADC() ^ HAL_GetTick());
 
   /* USER CODE END 2 */
 
